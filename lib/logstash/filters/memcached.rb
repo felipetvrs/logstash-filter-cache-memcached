@@ -39,6 +39,8 @@ class LogStash::Filters::Memcached < LogStash::Filters::Base
   # The field you will store or retrive into
   config :field, :validate => :string
 
+  # The tag on miss
+  config :tag_on_miss, :type => :string, :default => "cache_miss"
 
   public
   def register
@@ -51,19 +53,19 @@ class LogStash::Filters::Memcached < LogStash::Filters::Base
   public
   def filter(event)
     if @retreive
-      event[@field] = @cache.get(@key)
-      if event[@field] == nil
-        event["tags"] ||= []
-        event["tags"] << "cache_miss" unless event["tags"].include?("cache_miss")
+      event.set(@field,@cache.get(event.get(@key)))
+      if event.get(@field) == nil
+        event.tag(@tag_on_miss)
       else
-        # filter_matched should go in the last line of our successful code
+        #filter_matched should go in the last line of our successful code
         filter_matched(event)
       end
     else
-      @cache.set(@key, event[@field])
+      @cache.set(event.get(@key),event.get(@field))
+      #@cache.set(@key, event.get(@field))
       # filter_matched should go in the last line of our successful code
       filter_matched(event)
     end
 
   end # def filter
-end # class LogStash::Filters::Example
+end # class LogStash::Filters::Exampleº
